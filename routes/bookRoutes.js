@@ -9,7 +9,7 @@ const router = express.Router();
 router.get("/featured", async (req, res) => {
   try {
     const { booksCollection } = await getCollections();
-    const books = await booksCollection.find({ status: "Published" }).sort({ createdAt: -1 }).limit(6).toArray();
+    const books = await booksCollection.find({ status: { $regex: /^published$/i } }).sort({ createdAt: -1 }).limit(6).toArray();
     res.json({ success: true, data: books });
   } catch (error) {
     console.error(error);
@@ -21,7 +21,7 @@ router.get("/featured", async (req, res) => {
 router.get("/pending", verifyToken, verifyAdmin, async (req, res) => {
   try {
     const { booksCollection } = await getCollections();
-    const books = await booksCollection.find({ status: "Pending Approval" }).sort({ createdAt: -1 }).toArray();
+    const books = await booksCollection.find({ status: { $regex: /^pending approval$/i } }).sort({ createdAt: -1 }).toArray();
     res.status(200).json({ success: true, data: books });
   } catch (error) {
     console.error(error);
@@ -34,7 +34,7 @@ router.get("/admin/all", verifyToken, verifyAdmin, async (req, res) => {
     const { booksCollection } = await getCollections();
     const { page = 1, limit = 12 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
-    const query = { status: { $ne: "Pending Approval" } };
+    const query = { status: { $not: { $regex: /^pending approval$/i } } };
     const totalData = await booksCollection.countDocuments(query);
     const result = await booksCollection.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)).toArray();
 
@@ -66,9 +66,9 @@ router.get("/", async (req, res) => {
     const { search, category, minPrice, maxPrice, sort, availability, email, role, page = 1, limit = 12 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
-    let matchStage = { status: "Published" };
+    let matchStage = { status: { $regex: /^published$/i } };
     if (role === "admin") matchStage = {};
-    else if (role === "librarian" && email) matchStage = { $or: [{ status: "Published" }, { librarianEmail: email }] };
+    else if (role === "librarian" && email) matchStage = { $or: [{ status: { $regex: /^published$/i } }, { librarianEmail: email }] };
 
     if (category && category !== "All") matchStage.category = category;
     if (minPrice || maxPrice) {
@@ -181,11 +181,12 @@ router.patch("/:id/unpublish", verifyToken, verifyLibrarian, async (req, res) =>
 
     // A "Pending Approval" book can never be published this way — only the
     // admin approval route may set status to Published for the first time.
-    if (book.status !== "Published" && book.status !== "Unpublished") {
+    const normalizedStatus = book.status?.toLowerCase();
+    if (normalizedStatus !== "published" && normalizedStatus !== "unpublished") {
       return res.status(400).json({ success: false, message: "Only published or unpublished books can be toggled" });
     }
 
-    const nextStatus = book.status === "Published" ? "Unpublished" : "Published";
+    const nextStatus = book.status?.toLowerCase() === "published" ? "Unpublished" : "Published";
     await booksCollection.updateOne({ _id: new ObjectId(req.params.id) }, { $set: { status: nextStatus } });
     res.status(200).json({ success: true, nextStatus });
   } catch (error) {

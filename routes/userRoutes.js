@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/", verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const { usersCollection } = getCollections();
+    const { usersCollection } = await getCollections();
     const users = await usersCollection.find({}).sort({ createdAt: -1 }).toArray();
     res.status(200).json(users);
   } catch (error) {
@@ -18,7 +18,7 @@ router.get("/", verifyToken, verifyAdmin, async (req, res) => {
 
 router.patch("/role", verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const { usersCollection } = getCollections();
+    const { usersCollection } = await getCollections();
     const { userId, role } = req.body;
     if (!userId || !role) return res.status(400).json({ success: false, message: "Missing fields" });
     const result = await usersCollection.updateOne({ _id: new ObjectId(userId) }, { $set: { role: role } });
@@ -32,7 +32,7 @@ router.patch("/role", verifyToken, verifyAdmin, async (req, res) => {
 
 router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const { usersCollection } = getCollections();
+    const { usersCollection } = await getCollections();
     const result = await usersCollection.deleteOne({ _id: new ObjectId(req.params.id) });
     if (result.deletedCount > 0) res.status(200).json({ success: true, message: "User deleted" });
     else res.status(404).json({ success: false, message: "User not found" });
@@ -44,7 +44,7 @@ router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
 
 router.patch("/update-role", verifyToken, async (req, res) => {
   try {
-    const { usersCollection } = getCollections();
+    const { usersCollection } = await getCollections();
     const { role } = req.body;
     const email = req.user?.email; // always the caller's own account — never trust a client-supplied email
     if (!email || !role) return res.status(400).json({ success: false, message: "Required fields missing" });
@@ -62,7 +62,7 @@ router.patch("/update-role", verifyToken, async (req, res) => {
 
 router.get("/:email", verifyToken, async (req, res) => {
   try {
-    const { usersCollection } = getCollections();
+    const { usersCollection } = await getCollections();
     const user = await usersCollection.findOne({ email: req.params.email });
     if (user) res.status(200).json({ success: true, role: user.role, isRoleSelected: user.isRoleSelected || false });
     else res.status(404).json({ success: false, message: "User not found" });

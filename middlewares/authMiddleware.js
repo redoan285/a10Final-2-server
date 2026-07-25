@@ -22,14 +22,14 @@ const verifyToken = async (req, res, next) => {
 };
 
 const verifyAdmin = async (req, res, next) => {
-  const { usersCollection } = getCollections();
+  const { usersCollection } = await getCollections();
   const user = await usersCollection.findOne({ email: req.user?.email });
   if (user?.role !== "admin") return res.status(403).json({ message: "Admin access only" });
   next();
 };
 
 const verifyLibrarian = async (req, res, next) => {
-  const { usersCollection } = getCollections();
+  const { usersCollection } = await getCollections();
   const user = await usersCollection.findOne({ email: req.user?.email });
   if (user?.role !== "librarian" && user?.role !== "admin")
     return res.status(403).json({ message: "Librarian access only" });

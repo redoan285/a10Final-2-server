@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const { booksCollection, usersCollection, ordersCollection } = getCollections();
+    const { booksCollection, usersCollection, ordersCollection } = await getCollections();
     const totalBooks = await booksCollection.countDocuments();
     const totalReaders = await usersCollection.countDocuments();
     const totalOrders = await ordersCollection.countDocuments();

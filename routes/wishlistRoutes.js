@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post("/toggle", verifyToken, async (req, res) => {
   try {
-    const { wishlistCollection } = getCollections();
+    const { wishlistCollection } = await getCollections();
     const email = req.user?.email; // never trust a client-supplied email
     const { book } = req.body;
     const existing = await wishlistCollection.findOne({ email: email, bookId: book._id });
@@ -26,7 +26,7 @@ router.post("/toggle", verifyToken, async (req, res) => {
 
 router.get("/check", verifyToken, async (req, res) => {
   try {
-    const { wishlistCollection } = getCollections();
+    const { wishlistCollection } = await getCollections();
     const { bookId } = req.query;
     const email = req.user?.email;
     if (!email || !bookId) return res.json({ inWishlist: false });
@@ -40,7 +40,7 @@ router.get("/check", verifyToken, async (req, res) => {
 
 router.get("/:email", verifyToken, async (req, res) => {
   try {
-    const { wishlistCollection } = getCollections();
+    const { wishlistCollection } = await getCollections();
     if (req.user?.email !== req.params.email) {
       return res.status(403).json({ success: false, message: "You can only view your own wishlist" });
     }

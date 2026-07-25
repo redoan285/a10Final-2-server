@@ -13,7 +13,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 router.get("/", verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const { ordersCollection } = getCollections();
+    const { ordersCollection } = await getCollections();
     const orders = await ordersCollection.aggregate([
       { $sort: { orderedAt: -1 } },
       { $lookup: { from: "books", localField: "book.id", foreignField: "_id", as: "bookDetails" } },
@@ -30,7 +30,7 @@ router.get("/", verifyToken, verifyAdmin, async (req, res) => {
 
 router.get("/librarian/:email", verifyToken, verifyLibrarian, async (req, res) => {
   try {
-    const { ordersCollection, usersCollection } = getCollections();
+    const { ordersCollection, usersCollection } = await getCollections();
     const requester = await usersCollection.findOne({ email: req.user?.email });
     if (req.user?.email !== req.params.email && requester?.role !== "admin") {
       return res.status(403).json({ success: false, message: "You can only view your own orders" });
@@ -47,7 +47,7 @@ const ALLOWED_ORDER_STATUSES = ["Pending", "Dispatched", "Delivered"];
 
 router.patch("/:id/status", verifyToken, verifyLibrarian, async (req, res) => {
   try {
-    const { ordersCollection, usersCollection } = getCollections();
+    const { ordersCollection, usersCollection } = await getCollections();
     if (!ALLOWED_ORDER_STATUSES.includes(req.body.status)) {
       return res.status(400).json({ success: false, message: "Invalid status value" });
     }
@@ -71,7 +71,7 @@ router.patch("/:id/status", verifyToken, verifyLibrarian, async (req, res) => {
 
 router.get("/check-duplicate", verifyToken, async (req, res) => {
   try {
-    const { ordersCollection } = getCollections();
+    const { ordersCollection } = await getCollections();
     const { email, bookId } = req.query;
     if (!email || !bookId) return res.json({ hasOrdered: false });
     const order = await ordersCollection.findOne({ "user.email": email, "book.id": new ObjectId(bookId) });
@@ -84,7 +84,7 @@ router.get("/check-duplicate", verifyToken, async (req, res) => {
 
 router.get("/user/:email", verifyToken, async (req, res) => {
   try {
-    const { ordersCollection, booksCollection, usersCollection } = getCollections();
+    const { ordersCollection, booksCollection, usersCollection } = await getCollections();
     const requester = await usersCollection.findOne({ email: req.user?.email });
     if (req.user?.email !== req.params.email && requester?.role !== "admin") {
       return res.status(403).json({ success: false, message: "You can only view your own order history" });
@@ -105,7 +105,7 @@ router.get("/user/:email", verifyToken, async (req, res) => {
 
 router.post("/", verifyToken, async (req, res) => {
   try {
-    const { ordersCollection } = getCollections();
+    const { ordersCollection } = await getCollections();
     const data = req.body;
     if (!data.bookId || !data.sessionId) return res.status(400).json({ success: false, message: "Missing fields" });
 

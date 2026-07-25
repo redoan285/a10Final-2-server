@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/check-eligibility", verifyToken, async (req, res) => {
   try {
-    const { ordersCollection } = getCollections();
+    const { ordersCollection } = await getCollections();
     const { email, bookId } = req.query;
     if (!email || !bookId) return res.status(400).json({ success: false, canReview: false });
     const order = await ordersCollection.findOne({ "user.email": email, "book.id": new ObjectId(bookId), status: "Delivered" });
@@ -20,7 +20,7 @@ router.get("/check-eligibility", verifyToken, async (req, res) => {
 
 router.get("/:bookId", async (req, res) => {
   try {
-    const { reviewsCollection } = getCollections();
+    const { reviewsCollection } = await getCollections();
     const reviews = await reviewsCollection.find({ bookId: req.params.bookId }).sort({ createdAt: -1 }).toArray();
     res.status(200).json({ success: true, data: reviews });
   } catch (error) {
@@ -31,7 +31,7 @@ router.get("/:bookId", async (req, res) => {
 
 router.post("/", verifyToken, async (req, res) => {
   try {
-    const { reviewsCollection, ordersCollection } = getCollections();
+    const { reviewsCollection, ordersCollection } = await getCollections();
     const userEmail = req.user?.email; // never trust a client-supplied email
     const { bookId, rating, comment } = req.body;
 
@@ -61,7 +61,7 @@ router.post("/", verifyToken, async (req, res) => {
 
 router.get("/user/:email", verifyToken, async (req, res) => {
   try {
-    const { reviewsCollection, booksCollection, usersCollection } = getCollections();
+    const { reviewsCollection, booksCollection, usersCollection } = await getCollections();
     const requester = await usersCollection.findOne({ email: req.user?.email });
     if (req.user?.email !== req.params.email && requester?.role !== "admin") {
       return res.status(403).json({ success: false, message: "You can only view your own reviews" });
@@ -82,7 +82,7 @@ router.get("/user/:email", verifyToken, async (req, res) => {
 
 router.patch("/:id", verifyToken, async (req, res) => {
   try {
-    const { reviewsCollection } = getCollections();
+    const { reviewsCollection } = await getCollections();
     const review = await reviewsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!review) return res.status(404).json({ success: false, message: "Review not found" });
     if (review.userEmail !== req.user?.email) {
@@ -99,7 +99,7 @@ router.patch("/:id", verifyToken, async (req, res) => {
 
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
-    const { reviewsCollection, usersCollection } = getCollections();
+    const { reviewsCollection, usersCollection } = await getCollections();
     const review = await reviewsCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!review) return res.status(404).json({ success: false, message: "Review not found" });
     const requester = await usersCollection.findOne({ email: req.user?.email });
