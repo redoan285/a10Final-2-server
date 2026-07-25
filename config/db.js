@@ -15,15 +15,16 @@ let database;
 
 async function connectDB() {
   if (!database) {
-    // await client.connect();
+    await client.connect(); // ← was incorrectly commented out
     database = client.db(process.env.DB_NAME);
     console.log("BiblioDrop MongoDB Connected Successfully");
   }
   return database;
 }
 
-function getCollections() {
-  if (!database) throw new Error("Database not connected yet!");
+// Async version — always awaits connection (safe for Vercel cold starts)
+async function getCollections() {
+  await connectDB();
   return {
     usersCollection: database.collection("user"),
     booksCollection: database.collection("books"),

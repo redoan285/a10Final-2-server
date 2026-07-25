@@ -8,7 +8,7 @@ const router = express.Router();
 // Public Routes
 router.get("/featured", async (req, res) => {
   try {
-    const { booksCollection } = getCollections();
+    const { booksCollection } = await getCollections();
     const books = await booksCollection.find({ status: "Published" }).sort({ createdAt: -1 }).limit(6).toArray();
     res.json({ success: true, data: books });
   } catch (error) {
@@ -20,7 +20,7 @@ router.get("/featured", async (req, res) => {
 // Admin Routes (must be before /:id wildcard)
 router.get("/pending", verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const { booksCollection } = getCollections();
+    const { booksCollection } = await getCollections();
     const books = await booksCollection.find({ status: "Pending Approval" }).sort({ createdAt: -1 }).toArray();
     res.status(200).json({ success: true, data: books });
   } catch (error) {
@@ -31,7 +31,7 @@ router.get("/pending", verifyToken, verifyAdmin, async (req, res) => {
 
 router.get("/admin/all", verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const { booksCollection } = getCollections();
+    const { booksCollection } = await getCollections();
     const { page = 1, limit = 12 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
     const query = { status: { $ne: "Pending Approval" } };
@@ -51,7 +51,7 @@ router.get("/admin/all", verifyToken, verifyAdmin, async (req, res) => {
 // Librarian Routes (must be before /:id wildcard)
 router.get("/librarian/:email", verifyToken, verifyLibrarian, async (req, res) => {
   try {
-    const { booksCollection } = getCollections();
+    const { booksCollection } = await getCollections();
     const books = await booksCollection.find({ librarianEmail: req.params.email }).sort({ createdAt: -1 }).toArray();
     res.status(200).json({ success: true, data: books });
   } catch (error) {
@@ -62,7 +62,7 @@ router.get("/librarian/:email", verifyToken, verifyLibrarian, async (req, res) =
 
 router.get("/", async (req, res) => {
   try {
-    const { booksCollection } = getCollections();
+    const { booksCollection } = await getCollections();
     const { search, category, minPrice, maxPrice, sort, availability, email, role, page = 1, limit = 12 } = req.query;
     const skip = (Number(page) - 1) * Number(limit);
 
@@ -123,7 +123,7 @@ router.get("/", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    const { booksCollection } = getCollections();
+    const { booksCollection } = await getCollections();
     const book = await booksCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (book) res.json({ success: true, data: book });
     else res.status(404).json({ success: false, message: "Book not found" });
@@ -136,7 +136,7 @@ router.get("/:id", async (req, res) => {
 
 router.patch("/:id/approve", verifyToken, verifyAdmin, async (req, res) => {
   try {
-    const { booksCollection } = getCollections();
+    const { booksCollection } = await getCollections();
     await booksCollection.updateOne({ _id: new ObjectId(req.params.id) }, { $set: { status: "Published" } });
     res.status(200).json({ success: true, message: "Book approved successfully" });
   } catch (error) {
@@ -148,7 +148,7 @@ router.patch("/:id/approve", verifyToken, verifyAdmin, async (req, res) => {
 // Librarian & Admin Routes
 router.delete("/:id", verifyToken, verifyLibrarian, async (req, res) => {
   try {
-    const { booksCollection, usersCollection } = getCollections();
+    const { booksCollection, usersCollection } = await getCollections();
     const book = await booksCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!book) return res.status(404).json({ success: false, message: "Book not found" });
 
@@ -168,7 +168,7 @@ router.delete("/:id", verifyToken, verifyLibrarian, async (req, res) => {
 
 router.patch("/:id/unpublish", verifyToken, verifyLibrarian, async (req, res) => {
   try {
-    const { booksCollection, usersCollection } = getCollections();
+    const { booksCollection, usersCollection } = await getCollections();
     const book = await booksCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!book) return res.status(404).json({ success: false, message: "Book not found" });
 
@@ -196,7 +196,7 @@ router.patch("/:id/unpublish", verifyToken, verifyLibrarian, async (req, res) =>
 
 router.patch("/:id", verifyToken, verifyLibrarian, async (req, res) => {
   try {
-    const { booksCollection, usersCollection } = getCollections();
+    const { booksCollection, usersCollection } = await getCollections();
     const book = await booksCollection.findOne({ _id: new ObjectId(req.params.id) });
     if (!book) return res.status(404).json({ success: false, message: "Book not found" });
 
@@ -221,7 +221,7 @@ router.patch("/:id", verifyToken, verifyLibrarian, async (req, res) => {
 
 router.post("/", verifyToken, verifyLibrarian, async (req, res) => {
   try {
-    const { booksCollection } = getCollections();
+    const { booksCollection } = await getCollections();
     const bookData = req.body;
     if (!bookData.title || !bookData.author || !bookData.coverImage) return res.status(400).json({ success: false, message: "Missing required fields" });
 
