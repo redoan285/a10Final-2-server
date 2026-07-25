@@ -17,6 +17,49 @@ router.get("/featured", async (req, res) => {
   }
 });
 
+// Admin Routes (must be before /:id wildcard)
+router.get("/pending", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const { booksCollection } = getCollections();
+    const books = await booksCollection.find({ status: "Pending Approval" }).sort({ createdAt: -1 }).toArray();
+    res.status(200).json({ success: true, data: books });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Error fetching pending books" });
+  }
+});
+
+router.get("/admin/all", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const { booksCollection } = getCollections();
+    const { page = 1, limit = 12 } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
+    const query = { status: { $ne: "Pending Approval" } };
+    const totalData = await booksCollection.countDocuments(query);
+    const result = await booksCollection.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)).toArray();
+
+    res.status(200).json({
+      success: true, data: result,
+      pagination: { page: Number(page), totalPages: Math.ceil(totalData / Number(limit)) || 1, totalItems: totalData }
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Error fetching admin books" });
+  }
+});
+
+// Librarian Routes (must be before /:id wildcard)
+router.get("/librarian/:email", verifyToken, verifyLibrarian, async (req, res) => {
+  try {
+    const { booksCollection } = getCollections();
+    const books = await booksCollection.find({ librarianEmail: req.params.email }).sort({ createdAt: -1 }).toArray();
+    res.status(200).json({ success: true, data: books });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Error fetching books" });
+  }
+});
+
 router.get("/", async (req, res) => {
   try {
     const { booksCollection } = getCollections();
@@ -90,17 +133,6 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// Admin Routes
-router.get("/pending", verifyToken, verifyAdmin, async (req, res) => {
-  try {
-    const { booksCollection } = getCollections();
-    const books = await booksCollection.find({ status: "Pending Approval" }).sort({ createdAt: -1 }).toArray();
-    res.status(200).json({ success: true, data: books });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Error fetching pending books" });
-  }
-});
 
 router.patch("/:id/approve", verifyToken, verifyAdmin, async (req, res) => {
   try {
@@ -110,25 +142,6 @@ router.patch("/:id/approve", verifyToken, verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Error approving book" });
-  }
-});
-
-router.get("/admin/all", verifyToken, verifyAdmin, async (req, res) => {
-  try {
-    const { booksCollection } = getCollections();
-    const { page = 1, limit = 12 } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
-    const query = { status: { $ne: "Pending Approval" } };
-    const totalData = await booksCollection.countDocuments(query);
-    const result = await booksCollection.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)).toArray();
-
-    res.status(200).json({
-      success: true, data: result,
-      pagination: { page: Number(page), totalPages: Math.ceil(totalData / Number(limit)) || 1, totalItems: totalData }
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Error fetching admin books" });
   }
 });
 
@@ -218,17 +231,6 @@ router.post("/", verifyToken, verifyLibrarian, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Internal server error" });
-  }
-});
-
-router.get("/librarian/:email", verifyToken, verifyLibrarian, async (req, res) => {
-  try {
-    const { booksCollection } = getCollections();
-    const books = await booksCollection.find({ librarianEmail: req.params.email }).sort({ createdAt: -1 }).toArray();
-    res.status(200).json({ success: true, data: books });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Error fetching books" });
   }
 });
 
