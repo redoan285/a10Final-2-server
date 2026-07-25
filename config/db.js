@@ -26,7 +26,7 @@ function getCollections() {
   if (!database) throw new Error("Database not connected yet!");
   return {
     usersCollection: database.collection("user"),
-    booksCollection: database.collection("book's"),
+    booksCollection: database.collection("books"),
     ordersCollection: database.collection("orders"),
     reviewsCollection: database.collection("reviews"),
     wishlistCollection: database.collection("wishlist"),

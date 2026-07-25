@@ -35,12 +35,15 @@ app.get("/", (req, res) => {
   res.send("BiblioDrop ~ Server is running securely and beautifully structured!");
 });
 
-// Start server and connect to database
-async function startServer() {
-  await connectDB();
+// Connect to database
+connectDB().catch(console.dir);
+
+// Export app for Vercel serverless
+module.exports = app;
+
+// Start server locally (not used on Vercel)
+if (process.env.NODE_ENV !== "production") {
   app.listen(port, () => {
     console.log(`BiblioDrop-Server running on port ${port}`);
   });
 }
-
-startServer().catch(console.dir);
