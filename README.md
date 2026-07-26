@@ -110,7 +110,7 @@ DB_NAME=biblio_drop
 CLIENT_URL=http://localhost:3000
 
 ---
-git clone [https://github.com/Ashik-Ahammad/biblio-drop-server.git](https://github.com/Ashik-Ahammad/biblio-drop-server.git)
+git clone [https://github.com/redoan285/a10Final-2-server.git](https://github.com/redoan285/a10Final-2-server.git)
 cd biblio-drop-server
 
 npm install
